@@ -7,7 +7,7 @@ function errorHandler(err, req, res, next) {
     // set the exception in the responseBody
     ResponseWrapper.exception.code = statusCode;
     ResponseWrapper.exception.message = err.message;
-    ResponseWrapper.exception.stack = err.stack;
+    ResponseWrapper.exception.stack =  "at " + err.stack.split("at ")[1];
 
     // set response as null when exception occurs
     ResponseWrapper.responseData = null;

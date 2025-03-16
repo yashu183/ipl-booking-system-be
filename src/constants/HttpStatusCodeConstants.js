@@ -4,6 +4,7 @@ const HttpStatusCodeConstants = {
     Unauthorized: 401,
     Forbidden: 403,
     NotFound: 404,
+    UnProcessable: 422,
     Created: 201,
     Ok: 200
 }
