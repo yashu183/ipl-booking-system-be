@@ -1,0 +1,22 @@
+const { HttpStatusCodeConstants } = require("../constants/HttpStatusCodeConstants");
+const { ResponseConstants } = require("../constants/ResponseConstants");
+const { ResponseWrapper } = require("../interfaces/ResponseWrapper");
+
+function errorHandler(err, req, res, next) {
+    const statusCode = err.statusCode || HttpStatusCodeConstants.InternalServerError;
+    // set the exception in the responseBody
+    ResponseWrapper.exception.code = statusCode;
+    ResponseWrapper.exception.message = err.message;
+    ResponseWrapper.exception.stack = err.stack;
+
+    // set response as null when exception occurs
+    ResponseWrapper.responseData = null;
+    // set the response message
+    ResponseWrapper.responseMessage = ResponseConstants.FailedResponseMessage;
+
+    // set the HTTP Response StatusCode
+    res.status(statusCode);
+    res.json(ResponseWrapper);
+}
+
+module.exports.errorHandler = errorHandler;
