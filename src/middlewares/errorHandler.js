@@ -5,6 +5,7 @@ const { ResponseWrapper } = require("../interfaces/ResponseWrapper");
 function errorHandler(err, req, res, next) {
     const statusCode = err.statusCode || HttpStatusCodeConstants.InternalServerError;
     // set the exception in the responseBody
+    if(!ResponseWrapper.exception) { ResponseWrapper.exception = {} }
     ResponseWrapper.exception.code = statusCode;
     ResponseWrapper.exception.message = err.message;
     ResponseWrapper.exception.stack =  "at " + err.stack.split("at ")[1];
