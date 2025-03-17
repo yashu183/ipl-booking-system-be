@@ -39,23 +39,24 @@ module.exports = (sequelize, DataTypes) => {
         createdUserId: {
             type: DataTypes.INTEGER,
             allowNull: false,
+            references: {
+                model: "User",
+                key: "userId",
+            }
         },
         updatedUserId: {
             type: DataTypes.INTEGER,
             allowNull: true,
-            defaultValue: null
+            defaultValue: null,
+            references: {
+                model: "User",
+                key: "userId",
+            }
         }
     }, 
     {
-        tableName: 'Team',
-        underscored: true
+        tableName: 'Team'
     });
-
-    // Associations
-    Team.associate = function (models) {
-        Team.belongsTo(models.User, { foreignKey: 'createdUserId' });
-        Team.belongsTo(models.User, { foreignKey: 'updatedUserId' });
-    };
 
     return Team;
 };

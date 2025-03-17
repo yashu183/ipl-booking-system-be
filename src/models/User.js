@@ -52,18 +52,9 @@ module.exports = (sequelize, DataTypes) => {
       }
     }, 
     {
-      tableName: 'User',
-      underscored: true
+      tableName: 'User'
     });
-  
-    // Associations
-    User.associate = function(models) {
-      User.hasMany(models.Team, { foreignKey: 'createdUserId' });
-      User.hasMany(models.Team, { foreignKey: 'updatedUserId' });
-      User.hasMany(models.Match, { foreignKey: 'createdUserId' });
-      User.hasMany(models.Match, { foreignKey: 'updatedUserId' });
-    };
-  
+
     return User;
 };
   

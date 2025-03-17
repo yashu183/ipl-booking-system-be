@@ -10,11 +10,19 @@ module.exports = (sequelize, DataTypes) => {
       },
       homeTeamId: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
+        references: {
+          model: "Team",
+          key: "teamId",
+        }
       },
       awayTeamId: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
+        references: {
+          model: "Team",
+          key: "teamId",
+        }
       },
       venue: {
         type: DataTypes.STRING(100),
@@ -55,17 +63,24 @@ module.exports = (sequelize, DataTypes) => {
       },
       createdUserId: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
+        references: {
+          model: "User",
+          key: "userId",
+        }
       },
       updatedUserId: {
         type: DataTypes.INTEGER,
         allowNull: true,
-        defaultValue: null
+        defaultValue: null,
+        references: {
+          model: "User",
+          key: "userId",
+        }
       }
     }, 
     {
       tableName: 'Match',
-      underscored: true,
       validate: {
         ttlBookedTktsLimit() {
           if (this.ttlBookedTkts > this.ttlTkts) {
@@ -74,14 +89,6 @@ module.exports = (sequelize, DataTypes) => {
         }
       }
     });
-  
-    // Associations
-    Match.associate = function(models) {
-      Match.belongsTo(models.Team, { foreignKey: 'homeTeamId' });
-      Match.belongsTo(models.Team, { foreignKey: 'awayTeamId' });
-      Match.belongsTo(models.User, { foreignKey: 'createdUserId' });
-      Match.belongsTo(models.User, { foreignKey: 'updatedUserId' });
-    };
   
     return Match;
 };

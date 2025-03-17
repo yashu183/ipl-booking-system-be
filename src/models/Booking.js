@@ -8,11 +8,19 @@ module.exports = (sequelize, DataTypes) => {
       },
       userId: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,    
+        references: {
+          model: "User",
+          key: "userId",
+        }
       },
       matchId: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
+        references: {
+          model: "Match",
+          key: "matchId"
+        }
       },
       bookedTkts: {
         type: DataTypes.INTEGER,
@@ -41,26 +49,25 @@ module.exports = (sequelize, DataTypes) => {
       },
       createdUserId: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
+        references: {
+          model: "User",
+          key: "userId",
+        }
       },
       updatedUserId: {
         type: DataTypes.INTEGER,
         allowNull: true,
-        defaultValue: null
+        defaultValue: null,
+        references: {
+          model: "User",
+          key: "userId",
+        }
       }
     }, 
     {
-      tableName: 'Booking',
-      underscored: true
+      tableName: 'Booking'
     });
-  
-    // Associations
-    Booking.associate = function(models) {
-      Booking.belongsTo(models.User, { foreignKey: 'userId' });
-      Booking.belongsTo(models.Match, { foreignKey: 'matchId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
-      Booking.belongsTo(models.User, { foreignKey: 'createdUserId' });
-      Booking.belongsTo(models.User, { foreignKey: 'updatedUserId' });
-    };
   
     return Booking;
 };
