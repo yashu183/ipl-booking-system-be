@@ -11,14 +11,12 @@ const confirmBooking = async (req, res, next) => {
       if (!match) {
         const error = new Error(ResponseConstants.Booking.MatchNotFound);
         error.statusCode = HttpStatusCodeConstants.NotFound;
-        error.isCustom = true;
         throw error;
       }
   
       if (bookedTkts > match.ttlTkts) {
         const error = new Error(ResponseConstants.Booking.InvalidTicketsMessage);
         error.statusCode = HttpStatusCodeConstants.UnProcessable;
-        error.isCustom = true;
         throw error;
       }
   

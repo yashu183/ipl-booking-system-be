@@ -7,8 +7,9 @@ const bookingValidationSchema = checkSchema({
     isInt: { 
       errorMessage: BookingValdiationConstants.UserIdInt
     },
-    notEmpty: {
-      errorMessage: BookingValdiationConstants.UserIdNotEmpty,
+    isInt: {
+      options: { min: 1 },
+      errorMessage: BookingValdiationConstants.UserIdInvalid
     }
   },
   matchId: {
@@ -16,17 +17,20 @@ const bookingValidationSchema = checkSchema({
     isInt: {
       errorMessage: BookingValdiationConstants.MatchIdInt
     },
-    notEmpty: {
-      errorMessage: BookingValdiationConstants.MatchIdNotEmpty,
+    isInt: {
+      options: { min: 1 },
+      errorMessage: BookingValdiationConstants.MatchIdInvalid
     }
+
   },
   bookedTkts: {
     in: ['body'],
     isInt: {
       errorMessage: BookingValdiationConstants.BookedTicketsInt
     },
-    notEmpty: {
-      errorMessage: BookingValdiationConstants.BookedTicketsNotEmpty,
+    isInt: {
+      options: { min: 1 },
+      errorMessage: BookingValdiationConstants.BookedTicketsMin
     }
   },
 });
