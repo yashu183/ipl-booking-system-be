@@ -6,4 +6,16 @@ const RegisterUserValidationConstants = {
     PasswordLength: "Password must be atleast 8 characters"
 }
 
-module.exports = { RegisterUserValidationConstants }
+const BookingValdiationConstants = {
+    UserIdInt: "User Id must be a number",
+    UserIdNotEmpty: "User Id should not be null or empty",
+    MatchIdInt: "Match Id must be a number",
+    MatchIdNotEmpty: "Match Id should not be null or empty",
+    BookedTickets: "Booked Tickets must be a number",
+    BookedTicketsNotEmpty: "Booked Tickets should not be null or empty",
+    BookedTicketsMin: "Booked Tickets must be atleast 1",
+}
+module.exports = { 
+    RegisterUserValidationConstants,
+    BookingValdiationConstants
+}
