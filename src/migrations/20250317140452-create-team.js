@@ -20,7 +20,7 @@ module.exports = {
         allowNull: false
       },
       logo: {
-        type: Sequelize.TEXT,
+        type: Sequelize.TEXT('long'),
         allowNull: true
       },
       isDeleted: {
