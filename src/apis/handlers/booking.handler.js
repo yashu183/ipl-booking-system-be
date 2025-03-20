@@ -1,4 +1,4 @@
-const { Match, Booking } = require('../../models');
+const { Match, Booking, Team } = require('../../models');
 const { HttpStatusCodeConstants } = require('../../constants/HttpStatusCodeConstants');
 const { ResponseConstants } = require("../../constants/ResponseConstants");
 const { AuthConstants } = require("../../constants/AuthConstants");
@@ -91,13 +91,27 @@ const getAllBookings = async (req, res, next) => {
             whereCondition.userId = userId;
         }
         const bookings = await Booking.findAll({ where: whereCondition });
-        const bookingDetails = bookings.map(booking => ({
-            bookingId: booking.bookingId,
-            userId: booking.userId,
-            matchId: booking.matchId,
-            bookedTkts: booking.bookedTkts,
-            bookedDate: booking.bookedDate,
-        }));
+
+        const bookingDetails = await Promise.all(
+            bookings.map(async (booking) => {
+                const matchDetails = await Match.findOne({ where: { matchId: booking.matchId } });
+                const homeTeamDetails = await Team.findOne({ where: { teamId: matchDetails.homeTeamId } });
+                const awayTeamDetails = await Team.findOne({ where: { teamId: matchDetails.awayTeamId } });
+                return {
+                    bookingId: booking.bookingId,
+                    userId: booking.userId,
+                    match: {
+                      ...matchDetails.toJSON(),
+                      homeTeamName: homeTeamDetails.name,
+                      awayTeamName: awayTeamDetails.name,
+                      homeTeamLogo: homeTeamDetails.logo, 
+                      awayTeamLogo: awayTeamDetails.logo 
+                  },bookedTkts: booking.bookedTkts,
+                    bookedDate: booking.bookedDate,
+                };
+            })
+        );
+        
 
         res.responseBody = { bookings: bookingDetails }
         next();
