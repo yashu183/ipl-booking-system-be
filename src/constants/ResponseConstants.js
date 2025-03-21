@@ -16,6 +16,16 @@ const ResponseConstants = {
         BookingNotFound: "Booking Not Found",
         BookingCancellationSuccess: "Booking cancelled successfully",
         BookingAlreadyDeleted: "Booking has been already cancelled"
+    },
+    Matches: {
+        CreateSuccessMessage: "Match created successfully",
+        UpdateSuccessMessage: "Match updated successfully",
+        FetchSuccessMessage: "Match retrieved successfully",
+        DeleteSuccessMessage: "Match deleted successfully",
+        FetchAllSuccessMessage: "Matches retrieved successfully",
+        FetchUpcomingSuccessMessage: "Upcoming matches retrieved successfully",
+        NotFound: "Match not found",
+        UpdateFailed: "Match is not updated"
     }
 } 
 

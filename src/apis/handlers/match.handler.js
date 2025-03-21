@@ -1,3 +1,5 @@
+const { HttpStatusCodeConstants } = require('../../constants/HttpStatusCodeConstants');
+const { ResponseConstants } = require("../../constants/ResponseConstants");
 const { Match } = require('../../models');
 const { Op } = require('sequelize');
 
@@ -5,11 +7,11 @@ const { Op } = require('sequelize');
 const createMatch = async (req, res, next) => {
   try {
     const matchData = req.body;
-    
     const newMatch = await Match.create(matchData);
     
+    res.statusCode = HttpStatusCodeConstants.Created;
     res.responseBody = {
-      message: 'Match created successfully',
+      message: ResponseConstants.Matches.CreateSuccessMessage,
       data: newMatch
     };
     
@@ -37,7 +39,7 @@ const getAllMatches = async (req, res, next) => {
     });
     
     res.responseBody = {
-      message: 'Matches retrieved successfully',
+      message: ResponseConstants.Matches.FetchAllSuccessMessage,
       data: matches
     };
     
@@ -55,15 +57,13 @@ const getMatchById = async (req, res, next) => {
     const { matchId } = req.params;
     
     const match = await Match.findByPk(matchId);
-    
-    if (!match) {
-      res.responseBody = {
-        message: 'Match not found',
-        data: null
-      };
+    if (!match || match.isDeleted) {
+      const error = new Error(ResponseConstants.Matches.NotFound);
+      error.statusCode = HttpStatusCodeConstants.NotFound;
+      throw error;
     } else {
       res.responseBody = {
-        message: 'Match retrieved successfully',
+        message: ResponseConstants.Matches.FetchSuccessMessage,
         data: match
       };
     }
@@ -95,13 +95,11 @@ const updateMatch = async (req, res, next) => {
     );
     
     if (updatedRowsCount === 0) {
-      res.responseBody = {
-        message: 'Match not found or no changes made',
-        data: null
-      };
+      const error = new Error(ResponseConstants.Matches.UpdateFailed);
+      throw error;
     } else {
       res.responseBody = {
-        message: 'Match updated successfully',
+        message: ResponseConstants.Matches.UpdateSuccessMessage,
         data: updatedMatches[0]
       };
     }
@@ -122,13 +120,10 @@ const deleteMatch = async (req, res, next) => {
     
     const match = await Match.findByPk(matchId);
     
-    if (!match) {
-      res.responseBody = {
-        message: 'Match not found',
-        data: null
-      };
-      next();
-      return;
+    if (!match || match.isDeleted) {
+      const error = new Error(ResponseConstants.Matches.NotFound);
+      error.statusCode = HttpStatusCodeConstants.NotFound;
+      throw error;
     }
     
     // Perform soft delete
@@ -144,7 +139,7 @@ const deleteMatch = async (req, res, next) => {
     );
     
     res.responseBody = {
-      message: 'Match deleted successfully',
+      message: ResponseConstants.Matches.DeleteSuccessMessage,
       data: { matchId }
     };
     
@@ -171,7 +166,7 @@ const getUpcomingMatches = async (req, res, next) => {
     });
     
     res.responseBody = {
-      message: 'Upcoming matches retrieved successfully',
+      message: ResponseConstants.Matches.FetchUpcomingSuccessMessage,
       data: matches
     };
     
