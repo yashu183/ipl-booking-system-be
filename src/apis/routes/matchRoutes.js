@@ -16,13 +16,13 @@ const { verifyToken, isAdmin } = require("../../middlewares/authorizationHandler
 router.post('/', matchValidationSchema, validatioErrorHandler, verifyToken, isAdmin, createMatch);
 
 // Get all matches (public)
-router.get('/', getAllMatches);
+router.get('/', verifyToken, getAllMatches);
 
 // Get upcoming matches
-router.get('/upcoming', getUpcomingMatches);
+router.get('/upcoming', verifyToken, getUpcomingMatches);
 
 // Get match by ID 
-router.get('/id/:matchId', getMatchById);
+router.get('/id/:matchId', verifyToken, isAdmin, getMatchById);
 
 // Update match (admin only)
 router.put('/:matchId', matchValidationSchema, validatioErrorHandler, verifyToken, isAdmin, updateMatch);
