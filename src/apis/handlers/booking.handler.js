@@ -101,12 +101,16 @@ const getAllBookings = async (req, res, next) => {
                     bookingId: booking.bookingId,
                     userId: booking.userId,
                     match: {
-                      ...matchDetails.toJSON(),
+                      venue: matchDetails.venue,
+                      scheduledDate: matchDetails.scheduledDate
+                    },
+                    team: {
                       homeTeamName: homeTeamDetails.name,
                       awayTeamName: awayTeamDetails.name,
                       homeTeamLogo: homeTeamDetails.logo, 
                       awayTeamLogo: awayTeamDetails.logo 
-                  },bookedTkts: booking.bookedTkts,
+                    },
+                    bookedTkts: booking.bookedTkts,
                     bookedDate: booking.bookedDate,
                 };
             })
