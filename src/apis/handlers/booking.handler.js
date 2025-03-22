@@ -1,4 +1,4 @@
-const { Match, Booking, Team } = require('../../models');
+const { Match, Booking, Team, User } = require('../../models');
 const { HttpStatusCodeConstants } = require('../../constants/HttpStatusCodeConstants');
 const { ResponseConstants } = require("../../constants/ResponseConstants");
 const { AuthConstants } = require("../../constants/AuthConstants");
@@ -100,6 +100,7 @@ const getAllBookings = async (req, res, next) => {
                 const matchDetails = await Match.findOne({ where: { matchId: booking.matchId } });
                 const homeTeamDetails = await Team.findOne({ where: { teamId: matchDetails.homeTeamId } });
                 const awayTeamDetails = await Team.findOne({ where: { teamId: matchDetails.awayTeamId } });
+                const user = await User.findByPk(booking.userId);
 
                 // validate if match or team details not found
                 if(!matchDetails) {
@@ -114,6 +115,12 @@ const getAllBookings = async (req, res, next) => {
                   throw error;
                 }
 
+                if(!user) {
+                  const error = new Error(ResponseConstants.User.Error.NotFound);
+                  error.statusCode = HttpStatusCodeConstants.NotFound;
+                  throw error;
+                }
+
                 return {
                     bookingId: booking.bookingId,
                     userId: booking.userId,
@@ -122,10 +129,14 @@ const getAllBookings = async (req, res, next) => {
                       scheduledDate: matchDetails.scheduledDate
                     },
                     team: {
-                      homeTeamName: homeTeamDetails.name,
-                      awayTeamName: awayTeamDetails.name,
+                      homeTeamName: homeTeamDetails.code,
+                      awayTeamName: awayTeamDetails.code,
                       homeTeamLogo: homeTeamDetails.logo, 
                       awayTeamLogo: awayTeamDetails.logo 
+                    },
+                    user: {
+                      name: user.name,
+                      email: user.email
                     },
                     bookedTkts: booking.bookedTkts,
                     bookedDate: booking.bookedDate,
