@@ -15,6 +15,9 @@ Match.hasMany(Booking, { foreignKey: 'matchId' });
 Match.belongsTo(Team, { foreignKey: 'homeTeamId', as: 'homeTeam' });
 Match.belongsTo(Team, { foreignKey: 'awayTeamId', as: 'awayTeam' });
 
+Team.hasMany(Match, { foreignKey: "homeTeamId", as: "homeMatches" });
+Team.hasMany(Match, { foreignKey: "awayTeamId", as: "awayMatches" });
+
 // Export models
 module.exports = {
   User,
