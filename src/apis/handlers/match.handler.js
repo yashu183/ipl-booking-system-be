@@ -183,9 +183,38 @@ const getUpcomingMatches = async (req, res, next) => {
     const currentDate = new Date();
     const matches = await Match.findAll({
       where: {
-        scheduledDate: { [Op.gte]: currentDate },
+        scheduledDate: { [Op.gt]: currentDate },
         isDeleted: false
       },
+      attributes: [
+        "homeTeamId",
+        "awayTeamId",
+        "scheduledDate",
+        "price",
+        "ttlTkts",
+        "ttlBookedTkts",
+        "venue"
+      ],
+      include: [
+        {
+          model: Team,
+          as: "homeTeam",
+          required: true,
+          attributes: ["teamId", "name", "logo"],
+          where: {
+            teamId: { [Op.col]: 'Match.homeTeamId' }
+          }
+        },
+        {
+          model: Team,
+          as: 'awayTeam',
+          required: true,
+          attributes: ["teamId", "name", "logo"],
+          where: {
+            teamId: { [Op.col]: 'Match.awayTeamId' }
+          }
+        }
+      ],
       order: [['scheduledDate', 'ASC']]
     });
     
