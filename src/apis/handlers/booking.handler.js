@@ -2,6 +2,7 @@ const { Match, Booking, Team, User } = require('../../models');
 const { HttpStatusCodeConstants } = require('../../constants/HttpStatusCodeConstants');
 const { ResponseConstants } = require("../../constants/ResponseConstants");
 const { AuthConstants } = require("../../constants/AuthConstants");
+const Sequelize = require('sequelize');
 
 const confirmBooking = async (req, res, next) => {
     try {
@@ -85,72 +86,72 @@ const deleteBooking = async (req, res, next) => {
 }
 
 const getAllBookings = async (req, res, next) => {
-    try {
-        const { userId } = req.params;
-        const whereCondition = { isDeleted: 0 };
+  try {
+      const { userId } = req.params;
+      const whereCondition = { isDeleted: 0 };
 
-        if (userId) {
-            whereCondition.userId = userId;
-        }
+      if (userId) {
+          whereCondition.userId = userId;
+      }
 
-        const bookings = await Booking.findAll({ where: whereCondition });
+      const bookings = await Booking.findAll({
+          where: whereCondition,
+          include: [
+              {
+                  model: Match,
+                  where: { matchId: Sequelize.col('Booking.matchId') },
+                  include: [
+                      {
+                          model: Team,
+                          as: 'homeTeam',
+                          where: { teamId: Sequelize.col('Match.homeTeamId') },
+                          attributes: ['code', 'logo'],
+                      },
+                      {
+                          model: Team,
+                          as: 'awayTeam',
+                          where: { teamId: Sequelize.col('Match.awayTeamId') },
+                          attributes: ['code', 'logo'],
+                      }
+                  ]
+              },
+              {
+                  model: User,
+                  where: { userId: Sequelize.col('Booking.userId') },
+                  attributes: ['name', 'email']
+              }
+          ]
+      });
 
-        const bookingDetails = await Promise.all(
-            bookings.map(async (booking) => {
-                const matchDetails = await Match.findOne({ where: { matchId: booking.matchId } });
-                const homeTeamDetails = await Team.findOne({ where: { teamId: matchDetails.homeTeamId } });
-                const awayTeamDetails = await Team.findOne({ where: { teamId: matchDetails.awayTeamId } });
-                const user = await User.findByPk(booking.userId);
+      const bookingDetails = bookings.map(booking => ({
+          bookingId: booking.bookingId,
+          userId: booking.userId,
+          match: {
+              venue: booking.Match.venue,
+              scheduledDate: booking.Match.scheduledDate,
+          },
+          team: {
+              homeTeamName: booking.Match.homeTeam.code,
+              awayTeamName: booking.Match.awayTeam.code,
+              homeTeamLogo: booking.Match.homeTeam.logo,
+              awayTeamLogo: booking.Match.awayTeam.logo
+          },
+          user: {
+              name: booking.User.name,
+              email: booking.User.email
+          },
+          bookedTkts: booking.bookedTkts,
+          bookedDate: booking.bookedDate,
+      }));
 
-                // validate if match or team details not found
-                if(!matchDetails) {
-                  const error = new Error(ResponseConstants.Matches.NotFound);
-                  error.statusCode = HttpStatusCodeConstants.NotFound;
-                  throw error;
-                }
+      res.responseBody = { bookings: bookingDetails };
+      next();
+  } catch (error) {
+      console.error(`Error while fetching Bookings - ${error.message}`);
+      next(error);
+  }
+};
 
-                if(!homeTeamDetails || !awayTeamDetails) {
-                  const error = new Error(ResponseConstants.Team.NotFound);
-                  error.statusCode = HttpStatusCodeConstants.NotFound;
-                  throw error;
-                }
-
-                if(!user) {
-                  const error = new Error(ResponseConstants.User.Error.NotFound);
-                  error.statusCode = HttpStatusCodeConstants.NotFound;
-                  throw error;
-                }
-
-                return {
-                    bookingId: booking.bookingId,
-                    userId: booking.userId,
-                    match: {
-                      venue: matchDetails.venue,
-                      scheduledDate: matchDetails.scheduledDate
-                    },
-                    team: {
-                      homeTeamName: homeTeamDetails.code,
-                      awayTeamName: awayTeamDetails.code,
-                      homeTeamLogo: homeTeamDetails.logo, 
-                      awayTeamLogo: awayTeamDetails.logo 
-                    },
-                    user: {
-                      name: user.name,
-                      email: user.email
-                    },
-                    bookedTkts: booking.bookedTkts,
-                    bookedDate: booking.bookedDate,
-                };
-            })
-        );
-
-        res.responseBody = { bookings: bookingDetails }
-        next();
-    } catch (error) {
-        console.error(`Error while fetching Bookings - ${error.message}`);
-        next(error)
-    }
-}
 
 module.exports = { confirmBooking, 
     deleteBooking,
