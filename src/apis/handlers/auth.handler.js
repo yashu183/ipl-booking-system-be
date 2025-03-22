@@ -3,7 +3,6 @@ const { User } = require('../../models');
 const { HttpStatusCodeConstants } = require('../../constants/HttpStatusCodeConstants');
 const { ResponseConstants } = require("../../constants/ResponseConstants");
 const { generateJwtToken } = require("../../utils/jwtUtils");
-const { errorBuilder } = require("../../utils/errorBuilder");
 
 const register = async (req, res, next) => {
   try {
@@ -15,7 +14,6 @@ const register = async (req, res, next) => {
     if(existingUser) {
       const error = new Error(ResponseConstants.User.Error.ExistingUser);
       error.statusCode = HttpStatusCodeConstants.UnProcessable;
-      error.isCustom = true;
       throw error;
     }
 
@@ -25,13 +23,8 @@ const register = async (req, res, next) => {
     res.responseBody = { message: ResponseConstants.User.SuccessRegistration, userId: user.userId };
     next();
   } catch (error) {
-    if(error.isCustom) {
-      next(error);
-    } else {
-      console.error(error.message);
-      let err = new Error(`Error registering user: ${error.message}`);
-      next(err);
-    }
+    console.error(error.message);
+    next(error);
   }
 };
 
@@ -44,16 +37,14 @@ const login = async (req, res, next) => {
     if(!user) {
       const error = new Error(ResponseConstants.User.Error.LoginFailed);
       error.statusCode = HttpStatusCodeConstants.Unauthorized;
-      error.isCustom = true;
       throw error;
     }
 
     // check for password match
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
+    const isMatched = await bcrypt.compare(password, user.password);
+    if (!isMatched) {
       const error = new Error(ResponseConstants.User.Error.LoginFailed);
       error.statusCode = HttpStatusCodeConstants.Unauthorized;
-      error.isCustom = true;
       throw error;
     }
 
@@ -61,18 +52,20 @@ const login = async (req, res, next) => {
     const payload = { userId: user.userId, email: user.email, role: user.role };
     const token = generateJwtToken(payload);
 
-    res.statusCode = HttpStatusCodeConstants.Ok;
     res.responseBody = { message: ResponseConstants.User.SuccessLogin, token: token };
     next();
   } catch (error) {
-    if(error.isCustom) {
-      next(error);
-    } else {
-      console.error(error.message);
-      let err = new Error(`Error registering user: ${error.message}`);
-      next(err);
-    }
+    console.error(error.message);
+    next(error);
   }
 }
 
-module.exports = { register, login };
+const getAll = async (req, res, next) => {
+  console.log("getting all users");
+  const users = await User.findAll();
+  res.statusCode = HttpStatusCodeConstants.Ok;
+  res.responseBody = { users };
+  next();
+}
+
+module.exports = { register, login, getAll };

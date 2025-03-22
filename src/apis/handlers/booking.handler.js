@@ -5,9 +5,9 @@ const { AuthConstants } = require("../../constants/AuthConstants");
 
 const confirmBooking = async (req, res, next) => {
     try {
-
       const { userId, matchId, bookedTkts } = req.body;  
-      const match = await Match.findOne({ where: { matchId, isDeleted : 0} });
+      const match = await Match.findOne({ where: { matchId, isDeleted : 0 } });
+
       if (!match) {
         const error = new Error(ResponseConstants.Booking.MatchNotFound);
         error.statusCode = HttpStatusCodeConstants.NotFound;
@@ -31,6 +31,8 @@ const confirmBooking = async (req, res, next) => {
       match.ttlBookedTkts = match.ttlBookedTkts + bookedTkts;
       
       await match.save();
+
+      res.statusCode = HttpStatusCodeConstants.Created;
       res.responseBody = {
         message: ResponseConstants.Booking.BookingConfirmation,
         bookingId: booking.bookingId
@@ -71,8 +73,7 @@ const deleteBooking = async (req, res, next) => {
         booking.updatedUserId = req.decodedUser.userId;
         booking.updatedAt= new Date();
         await booking.save();
-    
-        res.statusCode = HttpStatusCodeConstants.Created;
+
         res.responseBody = {
           message: ResponseConstants.Booking.BookingCancellationSuccess,
         }
@@ -87,9 +88,11 @@ const getAllBookings = async (req, res, next) => {
     try {
         const { userId } = req.params;
         const whereCondition = { isDeleted: 0 };
+
         if (userId) {
             whereCondition.userId = userId;
         }
+
         const bookings = await Booking.findAll({ where: whereCondition });
 
         const bookingDetails = await Promise.all(
@@ -97,6 +100,20 @@ const getAllBookings = async (req, res, next) => {
                 const matchDetails = await Match.findOne({ where: { matchId: booking.matchId } });
                 const homeTeamDetails = await Team.findOne({ where: { teamId: matchDetails.homeTeamId } });
                 const awayTeamDetails = await Team.findOne({ where: { teamId: matchDetails.awayTeamId } });
+
+                // validate if match or team details not found
+                if(!matchDetails) {
+                  const error = new Error(ResponseConstants.Matches.NotFound);
+                  error.statusCode = HttpStatusCodeConstants.NotFound;
+                  throw error;
+                }
+
+                if(!homeTeamDetails || !awayTeamDetails) {
+                  const error = new Error(ResponseConstants.Team.NotFound);
+                  error.statusCode = HttpStatusCodeConstants.NotFound;
+                  throw error;
+                }
+
                 return {
                     bookingId: booking.bookingId,
                     userId: booking.userId,
@@ -115,7 +132,6 @@ const getAllBookings = async (req, res, next) => {
                 };
             })
         );
-        
 
         res.responseBody = { bookings: bookingDetails }
         next();

@@ -6,7 +6,8 @@ const ResponseConstants = {
         SuccessLogin: "User logged in successfully",
         Error: {
             ExistingUser: "User already exists with the given email",
-            LoginFailed: "Invalid credentials"
+            LoginFailed: "Invalid credentials",
+            NotFound: "User not found",
         }
     },
     Booking: {
@@ -25,7 +26,11 @@ const ResponseConstants = {
         FetchAllSuccessMessage: "Matches retrieved successfully",
         FetchUpcomingSuccessMessage: "Upcoming matches retrieved successfully",
         NotFound: "Match not found",
-        UpdateFailed: "Match is not updated"
+        UpdateFailed: "Match is not updated",
+        AlreadyExists: "Match already exists with the same details"
+    },
+    Team: {
+        NotFound: "Team not found"
     }
 } 
 

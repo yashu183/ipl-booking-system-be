@@ -1,18 +1,39 @@
 const { HttpStatusCodeConstants } = require('../../constants/HttpStatusCodeConstants');
 const { ResponseConstants } = require("../../constants/ResponseConstants");
-const { Match } = require('../../models');
+const { Match, Team } = require('../../models');
 const { Op } = require('sequelize');
 
 // Create a new match
 const createMatch = async (req, res, next) => {
   try {
     const matchData = req.body;
+
+    // check if match exists with the given data
+    const existingMatch = await Match.findOne({ where: { homeTeamId: matchData.homeTeamId, awayTeamId: matchData.awayTeamId, scheduledDate: matchData.scheduledDate } });
+    if(existingMatch) {
+      const error = new Error(ResponseConstants.Matches.AlreadyExists);
+      error.statusCode = HttpStatusCodeConstants.UnProcessable;
+      throw error;
+    }
+
+    // Check if team exists
+    const homeTeamDetails = await Team.findOne({ where: { teamId: matchData.homeTeamId } });
+    const awayTeamDetails = await Team.findOne({ where: { teamId: matchData.awayTeamId } });
+
+    if(!homeTeamDetails || !awayTeamDetails) {
+      const error = new Error(ResponseConstants.Team.NotFound);
+      error.statusCode = HttpStatusCodeConstants.NotFound;
+      throw error;
+    }
+
+    matchData.createdUserId = req.decodedUser.userId;
+
     const newMatch = await Match.create(matchData);
     
     res.statusCode = HttpStatusCodeConstants.Created;
     res.responseBody = {
       message: ResponseConstants.Matches.CreateSuccessMessage,
-      data: newMatch
+      data: newMatch.matchId
     };
     
     console.log(`Match created successfully with ID: ${newMatch.matchId}`);
@@ -28,20 +49,12 @@ const getAllMatches = async (req, res, next) => {
   try {
     const filters = req.body.filters || {};
     
-    // Default: don't show deleted matches unless specifically requested
-    if (filters.isDeleted === undefined) {
-      filters.isDeleted = false;
-    }
-    
     const matches = await Match.findAll({ 
       where: filters,
       order: [['scheduledDate', 'ASC']]
     });
     
-    res.responseBody = {
-      message: ResponseConstants.Matches.FetchAllSuccessMessage,
-      data: matches
-    };
+    res.responseBody = { matches };
     
     console.log(`Retrieved ${matches.length} matches`);
     next();
@@ -61,13 +74,10 @@ const getMatchById = async (req, res, next) => {
       const error = new Error(ResponseConstants.Matches.NotFound);
       error.statusCode = HttpStatusCodeConstants.NotFound;
       throw error;
-    } else {
-      res.responseBody = {
-        message: ResponseConstants.Matches.FetchSuccessMessage,
-        data: match
-      };
     }
     
+    res.responseBody = { match };
+
     console.log(`Retrieved match with ID: ${matchId}`);
     next();
   } catch (error) {
@@ -82,9 +92,28 @@ const updateMatch = async (req, res, next) => {
     const {matchId} = req.params;
     const { ...updateData } = req.body;
     
+    // Check if match exists
+    const match = await Match.findByPk(matchId);
+    if (!match || match.isDeleted) {
+      const error = new Error(ResponseConstants.Matches.NotFound);
+      error.statusCode = HttpStatusCodeConstants.NotFound;
+      throw error;
+    }
+
+    // Check if team exists
+    const homeTeamDetails = await Team.findOne({ where: { teamId: updateData.homeTeamId } });
+    const awayTeamDetails = await Team.findOne({ where: { teamId: updateData.awayTeamId } });
+
+    if(!homeTeamDetails || !awayTeamDetails) {
+      const error = new Error(ResponseConstants.Team.NotFound);
+      error.statusCode = HttpStatusCodeConstants.NotFound;
+      throw error;
+    }
+    
     // Mark as updated
     updateData.isUpdated = true;
     updateData.updatedAt = new Date();
+    updateData.updatedBy = req.decodedUser.userId;
     
     const [updatedRowsCount, updatedMatches] = await Match.update(
       updateData,
@@ -97,12 +126,13 @@ const updateMatch = async (req, res, next) => {
     if (updatedRowsCount === 0) {
       const error = new Error(ResponseConstants.Matches.UpdateFailed);
       throw error;
-    } else {
-      res.responseBody = {
-        message: ResponseConstants.Matches.UpdateSuccessMessage,
-        data: updatedMatches[0]
-      };
     }
+
+    res.statusCode = HttpStatusCodeConstants.Ok;
+    res.responseBody = {
+      message: ResponseConstants.Matches.UpdateSuccessMessage,
+      data: updatedMatches[0]
+    };
     
     console.log(`Updated match with ID: ${matchId}`);
     next();
@@ -116,7 +146,6 @@ const updateMatch = async (req, res, next) => {
 const deleteMatch = async (req, res, next) => {
   try {
     const { matchId } = req.params;
-    const { updatedUserId } = req.body;
     
     const match = await Match.findByPk(matchId);
     
@@ -131,17 +160,14 @@ const deleteMatch = async (req, res, next) => {
       {
         isDeleted: true,
         updatedAt: new Date(),
-        updatedUserId
+        updatedUserId: req.decodedUser.userId
       },
       {
         where: { matchId }
       }
     );
     
-    res.responseBody = {
-      message: ResponseConstants.Matches.DeleteSuccessMessage,
-      data: { matchId }
-    };
+    res.responseBody = { message: ResponseConstants.Matches.DeleteSuccessMessage };
     
     console.log(`Soft deleted match with ID: ${matchId}`);
     next();
@@ -154,21 +180,16 @@ const deleteMatch = async (req, res, next) => {
 // Get upcoming matches
 const getUpcomingMatches = async (req, res, next) => {
   try {
-    const { limit } = req.body;
-    const currentDate = new Date().toISOString();
+    const currentDate = new Date();
     const matches = await Match.findAll({
       where: {
-        scheduledDate: { [Op.gt]: currentDate },
+        scheduledDate: { [Op.gte]: currentDate },
         isDeleted: false
       },
-      order: [['scheduledDate', 'ASC']],
-      limit: limit || 10
+      order: [['scheduledDate', 'ASC']]
     });
     
-    res.responseBody = {
-      message: ResponseConstants.Matches.FetchUpcomingSuccessMessage,
-      data: matches
-    };
+    res.responseBody = { matches };
     
     console.log(`Retrieved ${matches.length} upcoming matches`);
     next();

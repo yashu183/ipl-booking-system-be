@@ -20,6 +20,14 @@ const matchValidationSchema = checkSchema({
     isInt: {
       options: { min: 1 },
       errorMessage: MatchValidationConstants.AwayTeamIdInvalid
+    },
+    custom: {
+      options: (value, { req }) => {
+        if (value === req.body.homeTeamId) {
+          throw new Error(MatchValidationConstants.TeamIdsSame);
+        }
+        return true;
+      }
     }
   },
   venue: {
@@ -82,27 +90,6 @@ const matchValidationSchema = checkSchema({
         }
         return true;
       }
-    }
-  },
-  createdUserId: {
-    in: ['body'],
-    isInt: {
-      errorMessage: MatchValidationConstants.CreatedUserIdInt
-    },
-    isInt: {
-      options: { min: 1 },
-      errorMessage: MatchValidationConstants.CreatedUserIdInvalid
-    }
-  },
-  updatedUserId: {
-    in: ['body'],
-    optional: { options: { nullable: true } },
-    isInt: {
-      errorMessage: MatchValidationConstants.UpdatedUserIdInt
-    },
-    isInt: {
-      options: { min: 1 },
-      errorMessage: MatchValidationConstants.UpdatedUserIdInvalid
     }
   }
 });

@@ -40,7 +40,7 @@ const MatchValidationConstants = {
     ScheduledDateRequired: "Scheduled date is required",
     
     // Price validation
-    PricePositive: "Price must be a positive number",
+    PricePositive: "Price should be a greater than 0",
     PriceDecimal: "Price must have at most 2 decimal places",
     PriceRequired: "Price is required",
     

@@ -12,22 +12,11 @@ const { matchValidationSchema } = require("../../validators/matchValidator");
 const { validatioErrorHandler } = require("../../middlewares/validationErrorHandler");
 const { verifyToken, isAdmin } = require("../../middlewares/authorizationHandler");
 
-// Create a new match (admin only)
-router.post('/', matchValidationSchema, validatioErrorHandler, verifyToken, isAdmin, createMatch);
-
-// Get all matches (public)
+router.post('/', verifyToken, isAdmin, matchValidationSchema, validatioErrorHandler, createMatch);
 router.get('/', verifyToken, getAllMatches);
-
-// Get upcoming matches
 router.get('/upcoming', verifyToken, getUpcomingMatches);
-
-// Get match by ID 
-router.get('/id/:matchId', verifyToken, isAdmin, getMatchById);
-
-// Update match (admin only)
-router.put('/:matchId', matchValidationSchema, validatioErrorHandler, verifyToken, isAdmin, updateMatch);
-
-// Delete match (admin only)
+router.get('/:matchId', verifyToken, getMatchById);
+router.put('/:matchId', verifyToken, isAdmin, matchValidationSchema, validatioErrorHandler, updateMatch);
 router.delete('/:matchId', verifyToken, isAdmin, deleteMatch);
 
 module.exports = router;
