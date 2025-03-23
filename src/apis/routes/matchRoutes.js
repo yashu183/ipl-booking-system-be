@@ -15,8 +15,8 @@ const { verifyToken, isAdmin } = require("../../middlewares/authorizationHandler
 router.post('/', verifyToken, isAdmin, matchValidationSchema, validatioErrorHandler, createMatch);
 router.get('/', verifyToken, getAllMatches);
 router.get('/upcoming', verifyToken, getUpcomingMatches);
-router.get('/match/:matchId', verifyToken, getMatchById);
-router.put('/match/:matchId', verifyToken, isAdmin, matchValidationSchema, validatioErrorHandler, updateMatch);
-router.delete('/match/:matchId', verifyToken, isAdmin, deleteMatch);
+router.get('/:matchId(\\d+)', verifyToken, getMatchById);
+router.put('/:matchId(\\d+)', verifyToken, isAdmin, matchValidationSchema, validatioErrorHandler, updateMatch);
+router.delete('/:matchId(\\d+)', verifyToken, isAdmin, deleteMatch);
 
 module.exports = router;
