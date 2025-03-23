@@ -183,7 +183,7 @@ const getUpcomingMatches = async (req, res, next) => {
     const currentDate = new Date();
     const matches = await Match.findAll({
       where: {
-        scheduledDate: { [Op.gt]: currentDate },
+        scheduledDate: { [Op.gte]: currentDate },
         isDeleted: false
       },
       attributes: [
