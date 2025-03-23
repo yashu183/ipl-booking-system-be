@@ -199,19 +199,13 @@ const getUpcomingMatches = async (req, res, next) => {
           model: Team,
           as: "homeTeam",
           required: true,
-          attributes: ["teamId", "code", "logo"],
-          where: {
-            teamId: { [Op.col]: 'Match.homeTeamId' }
-          }
+          attributes: ["teamId", "code", "logo"]
         },
         {
           model: Team,
           as: 'awayTeam',
           required: true,
-          attributes: ["teamId", "code", "logo"],
-          where: {
-            teamId: { [Op.col]: 'Match.awayTeamId' }
-          }
+          attributes: ["teamId", "code", "logo"]
         }
       ],
       order: [['scheduledDate', 'ASC']]
