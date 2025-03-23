@@ -26,8 +26,9 @@ const createMatch = async (req, res, next) => {
       throw error;
     }
 
+    matchData.ttlBookedTkts = 0;
     matchData.createdUserId = req.decodedUser.userId;
-
+    matchData.updatedUserId = req.decodedUser.userId;
     const newMatch = await Match.create(matchData);
     
     res.statusCode = HttpStatusCodeConstants.Created;
@@ -113,7 +114,8 @@ const updateMatch = async (req, res, next) => {
     // Mark as updated
     updateData.isUpdated = true;
     updateData.updatedAt = new Date();
-    updateData.updatedBy = req.decodedUser.userId;
+    updateData.updatedUserId = req.decodedUser.userId;
+    updateData.ttlBookedTkts = match.ttlBookedTkts
     
     const [updatedRowsCount, updatedMatches] = await Match.update(
       updateData,
@@ -181,12 +183,14 @@ const deleteMatch = async (req, res, next) => {
 const getUpcomingMatches = async (req, res, next) => {
   try {
     const currentDate = new Date();
+    currentDate.setUTCHours(0, 0, 0, 0); 
     const matches = await Match.findAll({
       where: {
         scheduledDate: { [Op.gte]: currentDate },
         isDeleted: false
       },
       attributes: [
+        "matchId",
         "homeTeamId",
         "awayTeamId",
         "scheduledDate",

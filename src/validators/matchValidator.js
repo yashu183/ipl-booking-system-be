@@ -49,7 +49,11 @@ const matchValidationSchema = checkSchema({
       options: (value) => {
         const date = new Date(value);
         const now = new Date();
-        if (date < now) {
+        // Extract only year, month, and date (ignore time)
+        const inputDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        if (inputDate < today) {
           throw new Error(MatchValidationConstants.ScheduledDateFuture);
         }
         return true;
@@ -71,25 +75,6 @@ const matchValidationSchema = checkSchema({
     isInt: {
       options: { min: 1 },
       errorMessage: MatchValidationConstants.TotalTicketsMin
-    }
-  },
-  ttlBookedTkts: {
-    in: ['body'],
-    optional: { options: { nullable: true } },
-    isInt: {
-      errorMessage: MatchValidationConstants.BookedTicketsInt
-    },
-    isInt: {
-      options: { min: 0 },
-      errorMessage: MatchValidationConstants.BookedTicketsMin
-    },
-    custom: {
-      options: (value, { req }) => {
-        if (value > req.body.ttlTkts) {
-          throw new Error(MatchValidationConstants.BookedTicketsExceed);
-        }
-        return true;
-      }
     }
   }
 });
