@@ -2,6 +2,7 @@ const { HttpStatusCodeConstants } = require('../../constants/HttpStatusCodeConst
 const { ResponseConstants } = require("../../constants/ResponseConstants");
 const { Match, Team } = require('../../models');
 const { Op } = require('sequelize');
+const Sequelize = require('sequelize');
 
 // Create a new match
 const createMatch = async (req, res, next) => {
@@ -221,11 +222,64 @@ const getUpcomingMatches = async (req, res, next) => {
   }
 };
 
+const filterMatches = async (req, res, next) => {
+  try {
+    const { teamId, scheduledDate } = req.query;
+
+    let filterConditions = { isDeleted: 0 };
+
+    if (teamId) {
+      filterConditions[Sequelize.Op.or] = [
+        { homeTeamId: teamId },
+        { awayTeamId: teamId }
+      ];
+    }
+
+    if (scheduledDate) {
+      filterConditions.scheduledDate = Sequelize.where(
+        Sequelize.fn('DATE', Sequelize.col('scheduledDate')),
+        scheduledDate 
+      )
+    }
+
+    const matches = await Match.findAll({
+      where: filterConditions,
+      attributes: [
+        "matchId",
+        "scheduledDate",
+        "price",
+        "ttlTkts",
+        "ttlBookedTkts",
+        "venue"
+      ],
+      include: [
+        {
+          model: Team,
+          as: 'homeTeam',
+          attributes: ['teamId', 'code', 'logo']
+        },
+        {
+          model: Team,
+          as: 'awayTeam',
+          attributes: ['teamId', 'code', 'logo']
+        }
+      ]
+    });
+
+    res.responseBody = { matches }
+    next();
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+};
+
 module.exports = {
   createMatch,
   getAllMatches,
   getMatchById,
   updateMatch,
   deleteMatch,
-  getUpcomingMatches
+  getUpcomingMatches,
+  filterMatches
 };
