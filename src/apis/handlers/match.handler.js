@@ -187,8 +187,7 @@ const getUpcomingMatches = async (req, res, next) => {
         isDeleted: false
       },
       attributes: [
-        "homeTeamId",
-        "awayTeamId",
+        "matchId",
         "scheduledDate",
         "price",
         "ttlTkts",
@@ -200,7 +199,7 @@ const getUpcomingMatches = async (req, res, next) => {
           model: Team,
           as: "homeTeam",
           required: true,
-          attributes: ["teamId", "name", "logo"],
+          attributes: ["teamId", "code", "logo"],
           where: {
             teamId: { [Op.col]: 'Match.homeTeamId' }
           }
@@ -209,7 +208,7 @@ const getUpcomingMatches = async (req, res, next) => {
           model: Team,
           as: 'awayTeam',
           required: true,
-          attributes: ["teamId", "name", "logo"],
+          attributes: ["teamId", "code", "logo"],
           where: {
             teamId: { [Op.col]: 'Match.awayTeamId' }
           }

@@ -130,11 +130,13 @@ const getAllBookings = async (req, res, next) => {
               venue: booking.Match.venue,
               scheduledDate: booking.Match.scheduledDate,
           },
-          team: {
-              homeTeamName: booking.Match.homeTeam.code,
-              awayTeamName: booking.Match.awayTeam.code,
-              homeTeamLogo: booking.Match.homeTeam.logo,
-              awayTeamLogo: booking.Match.awayTeam.logo
+          homeTeam: {
+            name: booking.Match.homeTeam.code,
+            logo: booking.Match.homeTeam.logo
+          },
+          awayTeam: {
+              name: booking.Match.awayTeam.code,
+              logo: booking.Match.awayTeam.logo
           },
           user: {
               name: booking.User.name,
