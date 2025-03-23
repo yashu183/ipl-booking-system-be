@@ -15,7 +15,7 @@ const confirmBooking = async (req, res, next) => {
         throw error;
       }
   
-      if (bookedTkts > match.ttlTkts) {
+      if (bookedTkts > match.ttlTkts - match.ttlBookedTkts) {
         const error = new Error(ResponseConstants.Booking.InvalidTicketsMessage);
         error.statusCode = HttpStatusCodeConstants.UnProcessable;
         throw error;
@@ -27,10 +27,7 @@ const confirmBooking = async (req, res, next) => {
         bookedTkts,
         createdUserId: userId
       });
-
-      match.ttlTkts = match.ttlTkts - bookedTkts;
       match.ttlBookedTkts = match.ttlBookedTkts + bookedTkts;
-      
       await match.save();
 
       res.statusCode = HttpStatusCodeConstants.Created;
