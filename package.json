@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node src/app.js",
-    "dev": "nodemon sruc/app.js"
+    "dev": "nodemon src/app.js",
+    "seed": "node src/seeders/seedTeams.js"
   },
   "author": "",
   "license": "ISC",
@@ -18,10 +19,6 @@
     "express": "^4.21.2",
     "express-validator": "^7.2.1",
     "jsonwebtoken": "^9.0.2",
-    "mysql2": "^3.13.0",
-    "sequelize": "^6.37.6"
-  },
-  "devDependencies": {
-    "sequelize-cli": "^6.6.2"
+    "mongoose": "^8.16.1"
   }
 }

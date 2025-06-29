@@ -1,95 +1,82 @@
+const mongoose = require('mongoose');
 const { DatabaseConstants } = require("../constants/DatabaseConstants");
 
-module.exports = (sequelize, DataTypes) => {
-    const Match = sequelize.define('Match', {
-      matchId: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true,
-        allowNull: false
-      },
-      homeTeamId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-          model: "Team",
-          key: "teamId",
-        }
-      },
-      awayTeamId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-          model: "Team",
-          key: "teamId",
-        }
-      },
-      venue: {
-        type: DataTypes.STRING(100),
-        allowNull: false
-      },
-      scheduledDate: {
-        type: DataTypes.DATE,
-        allowNull: false
-      },
-      price: {
-        type: DataTypes.DECIMAL(10, 2),
-        allowNull: false
-      },
-      ttlTkts: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-      },
-      ttlBookedTkts: {
-        type: DataTypes.INTEGER,
-        defaultValue: 0
-      },
-      isDeleted: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false
-      },
-      isUpdated: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false
-      },
-      createdAt: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
-      },
-      updatedAt: {
-        type: DataTypes.DATE,
-        allowNull: true,
-        defaultValue: null
-      },
-      createdUserId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-          model: "User",
-          key: "userId",
-        }
-      },
-      updatedUserId: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-        defaultValue: null,
-        references: {
-          model: "User",
-          key: "userId",
-        }
-      }
-    }, 
-    {
-      tableName: 'Match',
-      validate: {
-        ttlBookedTktsLimit() {
-          if (this.ttlBookedTkts > this.ttlTkts) {
-            throw new Error(DatabaseConstants.ValidationErrors.InvalidBookedTickets);
-          }
-        }
-      }
-    });
-  
-    return Match;
-};
+const matchSchema = new mongoose.Schema({
+  homeTeamId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Team',
+    required: true
+  },
+  awayTeamId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Team',
+    required: true
+  },
+  venue: {
+    type: String,
+    required: true,
+    maxlength: 100
+  },
+  scheduledDate: {
+    type: Date,
+    required: true
+  },
+  price: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  ttlTkts: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  ttlBookedTkts: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
+  isUpdated: {
+    type: Boolean,
+    default: false
+  },
+  createdUserId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  updatedUserId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  }
+}, {
+  timestamps: true,
+  collection: 'matches'
+});
+
+// Virtual for matchId to maintain compatibility
+matchSchema.virtual('matchId').get(function() {
+  return this._id.toHexString();
+});
+
+// Validation for ttlBookedTkts
+matchSchema.pre('save', function(next) {
+  if (this.ttlBookedTkts > this.ttlTkts) {
+    const error = new Error(DatabaseConstants.ValidationErrors.InvalidBookedTickets);
+    return next(error);
+  }
+  next();
+});
+
+// Ensure virtual fields are serialised
+matchSchema.set('toJSON', {
+  virtuals: true
+});
+
+module.exports = mongoose.model('Match', matchSchema);
   

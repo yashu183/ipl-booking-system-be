@@ -3,24 +3,24 @@ const { MatchValidationConstants } = require("../constants/ValidationConstants")
 
 const matchValidationSchema = checkSchema({
   homeTeamId: {
-    in: ['body'],
-    isInt: { 
-      errorMessage: MatchValidationConstants.HomeTeamIdInt
-    },
-    isInt: {
-      options: { min: 1 },
-      errorMessage: MatchValidationConstants.HomeTeamIdInvalid
-    }
+    // in: ['body'],
+    // isInt: { 
+    //   errorMessage: MatchValidationConstants.HomeTeamIdInt
+    // },
+    // isInt: {
+    //   options: { min: 1 },
+    //   errorMessage: MatchValidationConstants.HomeTeamIdInvalid
+    // }
   },
   awayTeamId: {
-    in: ['body'],
-    isInt: { 
-      errorMessage: MatchValidationConstants.AwayTeamIdInt
-    },
-    isInt: {
-      options: { min: 1 },
-      errorMessage: MatchValidationConstants.AwayTeamIdInvalid
-    },
+    // in: ['body'],
+    // isInt: { 
+    //   errorMessage: MatchValidationConstants.AwayTeamIdInt
+    // },
+    // isInt: {
+    //   options: { min: 1 },
+    //   errorMessage: MatchValidationConstants.AwayTeamIdInvalid
+    // },
     custom: {
       options: (value, { req }) => {
         if (value === req.body.homeTeamId) {

@@ -1,8 +1,6 @@
 const { HttpStatusCodeConstants } = require('../../constants/HttpStatusCodeConstants');
 const { ResponseConstants } = require("../../constants/ResponseConstants");
 const { Match, Team } = require('../../models');
-const { Op } = require('sequelize');
-const Sequelize = require('sequelize');
 
 // Create a new match
 const createMatch = async (req, res, next) => {
@@ -10,7 +8,11 @@ const createMatch = async (req, res, next) => {
     const matchData = req.body;
 
     // check if match exists with the given data
-    const existingMatch = await Match.findOne({ where: { homeTeamId: matchData.homeTeamId, awayTeamId: matchData.awayTeamId, scheduledDate: matchData.scheduledDate } });
+    const existingMatch = await Match.findOne({ 
+      homeTeamId: matchData.homeTeamId, 
+      awayTeamId: matchData.awayTeamId, 
+      scheduledDate: matchData.scheduledDate 
+    });
     if(existingMatch) {
       const error = new Error(ResponseConstants.Matches.AlreadyExists);
       error.statusCode = HttpStatusCodeConstants.UnProcessable;
@@ -18,8 +20,8 @@ const createMatch = async (req, res, next) => {
     }
 
     // Check if team exists
-    const homeTeamDetails = await Team.findOne({ where: { teamId: matchData.homeTeamId } });
-    const awayTeamDetails = await Team.findOne({ where: { teamId: matchData.awayTeamId } });
+    const homeTeamDetails = await Team.findById(matchData.homeTeamId);
+    const awayTeamDetails = await Team.findById(matchData.awayTeamId);
 
     if(!homeTeamDetails || !awayTeamDetails) {
       const error = new Error(ResponseConstants.Team.NotFound);
@@ -34,10 +36,10 @@ const createMatch = async (req, res, next) => {
     res.statusCode = HttpStatusCodeConstants.Created;
     res.responseBody = {
       message: ResponseConstants.Matches.CreateSuccessMessage,
-      data: newMatch.matchId
+      data: newMatch._id
     };
     
-    console.log(`Match created successfully with ID: ${newMatch.matchId}`);
+    console.log(`Match created successfully with ID: ${newMatch._id}`);
     next();
   } catch (error) {
     console.error('Error creating match:', error.message);
@@ -50,10 +52,7 @@ const getAllMatches = async (req, res, next) => {
   try {
     const filters = req.body.filters || {};
     
-    const matches = await Match.findAll({ 
-      where: filters,
-      order: [['scheduledDate', 'ASC']]
-    });
+    const matches = await Match.find(filters).sort({ scheduledDate: 1 });
     
     res.responseBody = { matches };
     
@@ -70,7 +69,7 @@ const getMatchById = async (req, res, next) => {
   try {
     const { matchId } = req.params;
     
-    const match = await Match.findByPk(matchId);
+    const match = await Match.findById(matchId);
     if (!match || match.isDeleted) {
       const error = new Error(ResponseConstants.Matches.NotFound);
       error.statusCode = HttpStatusCodeConstants.NotFound;
@@ -94,7 +93,7 @@ const updateMatch = async (req, res, next) => {
     const { ...updateData } = req.body;
     
     // Check if match exists
-    const match = await Match.findByPk(matchId);
+    const match = await Match.findById(matchId);
     if (!match || match.isDeleted) {
       const error = new Error(ResponseConstants.Matches.NotFound);
       error.statusCode = HttpStatusCodeConstants.NotFound;
@@ -102,29 +101,35 @@ const updateMatch = async (req, res, next) => {
     }
 
     // Check if team exists
-    const homeTeamDetails = await Team.findOne({ where: { teamId: updateData.homeTeamId } });
-    const awayTeamDetails = await Team.findOne({ where: { teamId: updateData.awayTeamId } });
+    if (updateData.homeTeamId) {
+      const homeTeamDetails = await Team.findById(updateData.homeTeamId);
+      if (!homeTeamDetails) {
+        const error = new Error(ResponseConstants.Team.NotFound);
+        error.statusCode = HttpStatusCodeConstants.NotFound;
+        throw error;
+      }
+    }
 
-    if(!homeTeamDetails || !awayTeamDetails) {
-      const error = new Error(ResponseConstants.Team.NotFound);
-      error.statusCode = HttpStatusCodeConstants.NotFound;
-      throw error;
+    if (updateData.awayTeamId) {
+      const awayTeamDetails = await Team.findById(updateData.awayTeamId);
+      if (!awayTeamDetails) {
+        const error = new Error(ResponseConstants.Team.NotFound);
+        error.statusCode = HttpStatusCodeConstants.NotFound;
+        throw error;
+      }
     }
     
     // Mark as updated
     updateData.isUpdated = true;
-    updateData.updatedAt = new Date();
-    updateData.updatedBy = req.decodedUser.userId;
+    updateData.updatedUserId = req.decodedUser.userId;
     
-    const [updatedRowsCount, updatedMatches] = await Match.update(
+    const updatedMatch = await Match.findByIdAndUpdate(
+      matchId,
       updateData,
-      {
-        where: { matchId },
-        returning: true
-      }
+      { new: true, runValidators: true }
     );
     
-    if (updatedRowsCount === 0) {
+    if (!updatedMatch) {
       const error = new Error(ResponseConstants.Matches.UpdateFailed);
       throw error;
     }
@@ -132,7 +137,7 @@ const updateMatch = async (req, res, next) => {
     res.statusCode = HttpStatusCodeConstants.Ok;
     res.responseBody = {
       message: ResponseConstants.Matches.UpdateSuccessMessage,
-      data: updatedMatches[0]
+      data: updatedMatch
     };
     
     console.log(`Updated match with ID: ${matchId}`);
@@ -148,7 +153,7 @@ const deleteMatch = async (req, res, next) => {
   try {
     const { matchId } = req.params;
     
-    const match = await Match.findByPk(matchId);
+    const match = await Match.findById(matchId);
     
     if (!match || match.isDeleted) {
       const error = new Error(ResponseConstants.Matches.NotFound);
@@ -157,16 +162,10 @@ const deleteMatch = async (req, res, next) => {
     }
     
     // Perform soft delete
-    await Match.update(
-      {
-        isDeleted: true,
-        updatedAt: new Date(),
-        updatedUserId: req.decodedUser.userId
-      },
-      {
-        where: { matchId }
-      }
-    );
+    await Match.findByIdAndUpdate(matchId, {
+      isDeleted: true,
+      updatedUserId: req.decodedUser.userId
+    });
     
     res.responseBody = { message: ResponseConstants.Matches.DeleteSuccessMessage };
     
@@ -182,37 +181,27 @@ const deleteMatch = async (req, res, next) => {
 const getUpcomingMatches = async (req, res, next) => {
   try {
     const currentDate = new Date();
-    const matches = await Match.findAll({
-      where: {
-        scheduledDate: { [Op.gte]: currentDate },
-        isDeleted: false
-      },
-      attributes: [
-        "matchId",
-        "scheduledDate",
-        "price",
-        "ttlTkts",
-        "ttlBookedTkts",
-        "venue"
-      ],
-      include: [
-        {
-          model: Team,
-          as: "homeTeam",
-          required: true,
-          attributes: ["teamId", "code", "logo"]
-        },
-        {
-          model: Team,
-          as: 'awayTeam',
-          required: true,
-          attributes: ["teamId", "code", "logo"]
-        }
-      ],
-      order: [['scheduledDate', 'ASC']]
-    });
+    const matches = await Match.find({
+      scheduledDate: { $gte: currentDate },
+      isDeleted: false
+    })
+    .select('scheduledDate price ttlTkts ttlBookedTkts venue homeTeamId awayTeamId')
+    .populate('homeTeamId', 'code logo')
+    .populate('awayTeamId', 'code logo')
+    .sort({ scheduledDate: 1 })
+    .lean();
     
-    res.responseBody = { matches };
+    // Transform the response to use homeTeam and awayTeam
+    const transformedMatches = matches.map(match => ({
+      ...match,
+      matchId: match._id,
+      homeTeam: match.homeTeamId,
+      awayTeam: match.awayTeamId,
+      homeTeamId: undefined,
+      awayTeamId: undefined
+    }));
+    
+    res.responseBody = { matches: transformedMatches };
     
     console.log(`Retrieved ${matches.length} upcoming matches`);
     next();
@@ -226,47 +215,43 @@ const filterMatches = async (req, res, next) => {
   try {
     const { teamId, scheduledDate } = req.query;
 
-    let filterConditions = { isDeleted: 0 };
+    let filterConditions = { isDeleted: false };
 
     if (teamId) {
-      filterConditions[Sequelize.Op.or] = [
+      filterConditions.$or = [
         { homeTeamId: teamId },
         { awayTeamId: teamId }
       ];
     }
 
     if (scheduledDate) {
-      filterConditions.scheduledDate = Sequelize.where(
-        Sequelize.fn('DATE', Sequelize.col('scheduledDate')),
-        scheduledDate 
-      )
+      const startOfDay = new Date(scheduledDate);
+      const endOfDay = new Date(scheduledDate);
+      endOfDay.setDate(endOfDay.getDate() + 1);
+      
+      filterConditions.scheduledDate = {
+        $gte: startOfDay,
+        $lt: endOfDay
+      };
     }
 
-    const matches = await Match.findAll({
-      where: filterConditions,
-      attributes: [
-        "matchId",
-        "scheduledDate",
-        "price",
-        "ttlTkts",
-        "ttlBookedTkts",
-        "venue"
-      ],
-      include: [
-        {
-          model: Team,
-          as: 'homeTeam',
-          attributes: ['teamId', 'code', 'logo']
-        },
-        {
-          model: Team,
-          as: 'awayTeam',
-          attributes: ['teamId', 'code', 'logo']
-        }
-      ]
-    });
+    const matches = await Match.find(filterConditions)
+      .select('scheduledDate price ttlTkts ttlBookedTkts venue homeTeamId awayTeamId')
+      .populate('homeTeamId', 'code logo')
+      .populate('awayTeamId', 'code logo')
+      .lean();
 
-    res.responseBody = { matches }
+    // Transform the response to use homeTeam and awayTeam
+    const transformedMatches = matches.map(match => ({
+      ...match,
+      matchId: match._id,
+      homeTeam: match.homeTeamId,
+      awayTeam: match.awayTeamId,
+      homeTeamId: undefined,
+      awayTeamId: undefined
+    }));
+
+    res.responseBody = { matches: transformedMatches }
     next();
   } catch (error) {
     console.error(error);

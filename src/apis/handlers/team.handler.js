@@ -4,7 +4,7 @@ const { HttpStatusCodeConstants } = require("../../constants/HttpStatusCodeConst
 
 const getAllTeams = async (req, res, next) => {
     try {
-        const teams = await Team.findAll()
+        const teams = await Team.find({ isDeleted: false })
 
         if(teams.length == 0) {
             const error = new Error(ResponseConstants.Team.NotFound);
@@ -16,7 +16,7 @@ const getAllTeams = async (req, res, next) => {
         res.responseBody = { teams};
         next();
     } catch(error) {
-        console.error(`Error while getting an user : ${error.message}`);
+        console.error(`Error while getting teams : ${error.message}`);
         next(error);
     }
 }

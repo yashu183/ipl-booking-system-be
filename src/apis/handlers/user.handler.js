@@ -5,7 +5,7 @@ const { HttpStatusCodeConstants } = require("../../constants/HttpStatusCodeConst
 const getUserById = async (req, res, next) => {
     try {
         const { userId } = req.params;
-        const user = await User.findOne({ where: { userId, isDeleted: false } });
+        const user = await User.findOne({ _id: userId, isDeleted: false });
     
         if(!user) {
             const error = new Error(ResponseConstants.User.Error.NotFound);
@@ -14,7 +14,7 @@ const getUserById = async (req, res, next) => {
         }
     
         res.statusCode = HttpStatusCodeConstants.Ok;
-        res.responseBody = { userId: user.userId, name: user.name, email: user.email, role: user.role };
+        res.responseBody = { userId: user._id, name: user.name, email: user.email, role: user.role };
         next();
     } catch(error) {
         console.error(`Error while getting an user : ${error.message}`);

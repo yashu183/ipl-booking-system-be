@@ -1,74 +1,57 @@
-module.exports = (sequelize, DataTypes) => {
-    const Booking = sequelize.define('Booking', {
-      bookingId: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true,
-        allowNull: false
-      },
-      userId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,    
-        references: {
-          model: "User",
-          key: "userId",
-        }
-      },
-      matchId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-          model: "Match",
-          key: "matchId"
-        }
-      },
-      bookedTkts: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-      },
-      bookedDate: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
-      },
-      isDeleted: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false
-      },
-      isUpdated: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false
-      },
-      createdAt: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
-      },
-      updatedAt: {
-        type: DataTypes.DATE,
-        allowNull: true,
-        defaultValue: null
-      },
-      createdUserId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-          model: "User",
-          key: "userId",
-        }
-      },
-      updatedUserId: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-        defaultValue: null,
-        references: {
-          model: "User",
-          key: "userId",
-        }
-      }
-    }, 
-    {
-      tableName: 'Booking'
-    });
-  
-    return Booking;
-};
+const mongoose = require('mongoose');
+
+const bookingSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  matchId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Match',
+    required: true
+  },
+  bookedTkts: {
+    type: Number,
+    required: true,
+    min: 1
+  },
+  bookedDate: {
+    type: Date,
+    default: Date.now
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
+  isUpdated: {
+    type: Boolean,
+    default: false
+  },
+  createdUserId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  updatedUserId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  }
+}, {
+  timestamps: true,
+  collection: 'bookings'
+});
+
+// Virtual for bookingId to maintain compatibility
+bookingSchema.virtual('bookingId').get(function() {
+  return this._id.toHexString();
+});
+
+// Ensure virtual fields are serialised
+bookingSchema.set('toJSON', {
+  virtuals: true
+});
+
+module.exports = mongoose.model('Booking', bookingSchema);
   
