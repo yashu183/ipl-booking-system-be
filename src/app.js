@@ -31,9 +31,9 @@ const startServer = async () => {
     
     // Start the Express server
     const PORT = process.env.PORT || 5555;
-    app.listen(PORT, () => {
-      console.log(`Server is running on http://localhost:${PORT}`);
-    });
+    // app.listen(PORT, () => {
+    //   console.log(`Server is running on http://localhost:${PORT}`);
+    // });
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);
