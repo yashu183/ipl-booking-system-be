@@ -2,12 +2,11 @@ const { Match, Booking, Team, User } = require('../../models');
 const { HttpStatusCodeConstants } = require('../../constants/HttpStatusCodeConstants');
 const { ResponseConstants } = require("../../constants/ResponseConstants");
 const { AuthConstants } = require("../../constants/AuthConstants");
-const Sequelize = require('sequelize');
 
 const confirmBooking = async (req, res, next) => {
     try {
       const { userId, matchId, bookedTkts } = req.body;  
-      const match = await Match.findOne({ where: { matchId, isDeleted : 0 } });
+      const match = await Match.findOne({ _id: matchId, isDeleted: false });
 
       if (!match) {
         const error = new Error(ResponseConstants.Booking.MatchNotFound);
@@ -27,13 +26,14 @@ const confirmBooking = async (req, res, next) => {
         bookedTkts,
         createdUserId: userId
       });
+      
       match.ttlBookedTkts = match.ttlBookedTkts + bookedTkts;
       await match.save();
 
       res.statusCode = HttpStatusCodeConstants.Created;
       res.responseBody = {
         message: ResponseConstants.Booking.BookingConfirmation,
-        bookingId: booking.bookingId
+        bookingId: booking._id
       }
       next();
     } catch (error) {
@@ -47,7 +47,7 @@ const deleteBooking = async (req, res, next) => {
         const { bookingId } = req.params;
 
         console.log("bookingId", req);
-        const booking = await Booking.findOne({ where: { bookingId } });
+        const booking = await Booking.findById(bookingId);
 
         if (!booking) {
             const error = new Error(ResponseConstants.Booking.BookingNotFound);
@@ -55,22 +55,36 @@ const deleteBooking = async (req, res, next) => {
             throw error;
         }
 
-        if (req.decodedUser.userId !== booking.userId) {
+        if (req.decodedUser.userId !== booking.userId.toString()) {
             const err = new Error(AuthConstants.UserMismatch);
             err.statusCode = HttpStatusCodeConstants.Forbidden;
             throw err;
         }
 
-        if (booking.isDeleted === 1) {
+        if (booking.isDeleted === true) {
             const error = new Error(ResponseConstants.Booking.BookingAlreadyDeleted);
             error.statusCode = HttpStatusCodeConstants.UnProcessable;
             throw error;
         }
+
+        // Get the booked tickets count before cancelling
+        const bookedTkts = booking.bookedTkts;
+        
+        // Find the corresponding match to update ticket count
+        const match = await Match.findById(booking.matchId);
+        if (!match) {
+            const error = new Error(ResponseConstants.Booking.MatchNotFound);
+            error.statusCode = HttpStatusCodeConstants.NotFound;
+            throw error;
+        }
     
-        booking.isDeleted = 1;
+        booking.isDeleted = true;
         booking.updatedUserId = req.decodedUser.userId;
-        booking.updatedAt= new Date();
         await booking.save();
+
+        // Add the cancelled tickets back to the match
+        match.ttlBookedTkts = match.ttlBookedTkts - bookedTkts;
+        await match.save();
 
         res.responseBody = {
           message: ResponseConstants.Booking.BookingCancellationSuccess,
@@ -85,59 +99,46 @@ const deleteBooking = async (req, res, next) => {
 const getAllBookings = async (req, res, next) => {
   try {
       const { userId } = req.params;
-      const whereCondition = { isDeleted: 0 };
+      const whereCondition = { isDeleted: false };
 
       if (userId) {
           whereCondition.userId = userId;
       }
 
-      const bookings = await Booking.findAll({
-          where: whereCondition,
-          include: [
-              {
-                  model: Match,
-                  where: { matchId: Sequelize.col('Booking.matchId') },
-                  include: [
-                      {
-                          model: Team,
-                          as: 'homeTeam',
-                          where: { teamId: Sequelize.col('Match.homeTeamId') },
-                          attributes: ['code', 'logo'],
-                      },
-                      {
-                          model: Team,
-                          as: 'awayTeam',
-                          where: { teamId: Sequelize.col('Match.awayTeamId') },
-                          attributes: ['code', 'logo'],
-                      }
-                  ]
-              },
-              {
-                  model: User,
-                  where: { userId: Sequelize.col('Booking.userId') },
-                  attributes: ['name', 'email']
-              }
-          ]
-      });
+      const bookings = await Booking.find(whereCondition)
+          .populate({
+              path: 'matchId',
+              populate: [
+                  {
+                      path: 'homeTeamId',
+                      select: 'code logo'
+                  },
+                  {
+                      path: 'awayTeamId',
+                      select: 'code logo'
+                  }
+              ]
+          })
+          .populate('userId', 'name email');
 
       const bookingDetails = bookings.map(booking => ({
-          bookingId: booking.bookingId,
-          userId: booking.userId,
+          bookingId: booking._id,
+          userId: booking.userId._id,
           match: {
-              venue: booking.Match.venue,
-              scheduledDate: booking.Match.scheduledDate,
+              venue: booking.matchId.venue,
+              scheduledDate: booking.matchId.scheduledDate,
           },
           homeTeam: {
-            name: booking.Match.homeTeam.code,
-            logo: booking.Match.homeTeam.logo
+            name: booking.matchId.homeTeamId.code,
+            logo: booking.matchId.homeTeamId.logo
           },
           awayTeam: {
-              name: booking.Match.awayTeam.code,
-              logo: booking.Match.awayTeam.logo
+              name: booking.matchId.awayTeamId.code,
+              logo: booking.matchId.awayTeamId.logo
           },
           user: {
-              name: booking.User.name,
-              email: booking.User.email
+              name: booking.userId.name,
+              email: booking.userId.email
           },
           bookedTkts: booking.bookedTkts,
           bookedDate: booking.bookedDate,

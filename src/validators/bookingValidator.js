@@ -3,24 +3,24 @@ const { BookingValdiationConstants } = require("../constants/ValidationConstants
 
 const bookingValidationSchema = checkSchema({
   userId: {
-    in: ['body'],
-    isInt: { 
-      errorMessage: BookingValdiationConstants.UserIdInt
-    },
-    isInt: {
-      options: { min: 1 },
-      errorMessage: BookingValdiationConstants.UserIdInvalid
-    }
+    // in: ['body'],
+    // isInt: { 
+    //   errorMessage: BookingValdiationConstants.UserIdInt
+    // },
+    // isInt: {
+    //   options: { min: 1 },
+    //   errorMessage: BookingValdiationConstants.UserIdInvalid
+    // }
   },
   matchId: {
-    in: ['body'],
-    isInt: {
-      errorMessage: BookingValdiationConstants.MatchIdInt
-    },
-    isInt: {
-      options: { min: 1 },
-      errorMessage: BookingValdiationConstants.MatchIdInvalid
-    }
+    // in: ['body'],
+    // isInt: {
+    //   errorMessage: BookingValdiationConstants.MatchIdInt
+    // },
+    // isInt: {
+    //   options: { min: 1 },
+    //   errorMessage: BookingValdiationConstants.MatchIdInvalid
+    // }
 
   },
   bookedTkts: {

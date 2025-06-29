@@ -1,60 +1,60 @@
-module.exports = (sequelize, DataTypes) => {
-    const User = sequelize.define('User', {
-      userId: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true,
-        allowNull: false
-      },
-      name: {
-        type: DataTypes.STRING(100),
-        allowNull: false
-      },
-      email: {
-        type: DataTypes.STRING(100),
-        unique: true,
-        allowNull: false
-      },
-      password: {
-        type: DataTypes.STRING(255),
-        allowNull: false
-      },
-      role: {
-        type: DataTypes.ENUM("USER", "ADMIN"),
-        allowNull: false,
-        defaultValue: "USER"
-      },
-      isDeleted: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false
-      },
-      isUpdated: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false
-      },
-      createdAt: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
-      },
-      updatedAt: {
-        type: DataTypes.DATE,
-        allowNull: true,
-        defaultValue: null
-      },
-      createdUserId: {
-        type: DataTypes.INTEGER,
-        allowNull: true
-      },
-      updatedUserId: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-        defaultValue: null
-      }
-    }, 
-    {
-      tableName: 'User'
-    });
+const mongoose = require('mongoose');
 
-    return User;
-};
+const userSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    maxlength: 100
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    maxlength: 100
+  },
+  password: {
+    type: String,
+    required: true,
+    maxlength: 255
+  },
+  role: {
+    type: String,
+    enum: ["USER", "ADMIN"],
+    required: true,
+    default: "USER"
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
+  isUpdated: {
+    type: Boolean,
+    default: false
+  },
+  createdUserId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  updatedUserId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  }
+}, {
+  timestamps: true,
+  collection: 'users'
+});
+
+// Virtual for userId to maintain compatibility
+userSchema.virtual('userId').get(function() {
+  return this._id.toHexString();
+});
+
+// Ensure virtual fields are serialised
+userSchema.set('toJSON', {
+  virtuals: true
+});
+
+module.exports = mongoose.model('User', userSchema);
   
