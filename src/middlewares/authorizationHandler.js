@@ -2,6 +2,9 @@ const jwt = require('jsonwebtoken');
 const { AuthConstants } = require("../constants/AuthConstants");
 const { HttpStatusCodeConstants } = require("../constants/HttpStatusCodeConstants");
 
+// Ensure environment variables are loaded
+require('dotenv').config();
+
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const verifyToken = (req, res, next) => {
@@ -40,8 +43,8 @@ const checkUserIdMatch = (req, res, next) => {
   const userIdFromToken = req.decodedUser.userId;
   const userIdFromRequest = req.body.userId || req.params.userId;
 
-  // Compare user IDs
-  if (userIdFromToken !== parseInt(userIdFromRequest, 10)) {
+  // Compare user IDs (for MongoDB ObjectIds, compare as strings)
+  if (userIdFromToken !== userIdFromRequest) {
     const err = new Error(AuthConstants.UserMismatch);
     err.statusCode = HttpStatusCodeConstants.Forbidden;
     next(err);

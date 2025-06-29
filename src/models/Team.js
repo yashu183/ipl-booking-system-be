@@ -1,62 +1,52 @@
-module.exports = (sequelize, DataTypes) => {
-    const Team = sequelize.define('Team', {
-        teamId: {
-            type: DataTypes.INTEGER,
-            primaryKey: true,
-            autoIncrement: true,
-            allowNull: false
-        },
-        code: {
-            type: DataTypes.STRING(50),
-            unique: true,
-            allowNull: false
-        },
-        name: {
-            type: DataTypes.STRING(100),
-            allowNull: false
-        },
-        logo: {
-            type: DataTypes.TEXT,
-            allowNull: true
-        },
-        isDeleted: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: false
-        },
-        isUpdated: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: false
-        },
-        createdAt: {
-            type: DataTypes.DATE,
-            defaultValue: DataTypes.NOW
-        },
-        updatedAt: {
-            type: DataTypes.DATE,
-            allowNull: true,
-            defaultValue: null
-        },
-        createdUserId: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-            references: {
-                model: "User",
-                key: "userId",
-            }
-        },
-        updatedUserId: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-            defaultValue: null,
-            references: {
-                model: "User",
-                key: "userId",
-            }
-        }
-    }, 
-    {
-        tableName: 'Team'
-    });
+const mongoose = require('mongoose');
 
-    return Team;
-};
+const teamSchema = new mongoose.Schema({
+  code: {
+    type: String,
+    required: true,
+    unique: true,
+    maxlength: 50
+  },
+  name: {
+    type: String,
+    required: true,
+    maxlength: 100
+  },
+  logo: {
+    type: String,
+    default: null
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
+  isUpdated: {
+    type: Boolean,
+    default: false
+  },
+  createdUserId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  updatedUserId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  }
+}, {
+  timestamps: true,
+  collection: 'teams'
+});
+
+// Virtual for teamId to maintain compatibility
+teamSchema.virtual('teamId').get(function() {
+  return this._id.toHexString();
+});
+
+// Ensure virtual fields are serialised
+teamSchema.set('toJSON', {
+  virtuals: true
+});
+
+module.exports = mongoose.model('Team', teamSchema);
